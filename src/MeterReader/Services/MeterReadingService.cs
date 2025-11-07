@@ -30,6 +30,12 @@ namespace MeterReader.Services
                     };
                 }
             }
+
+            return  new StatusMessage()
+            {
+                Message = "Failed to save readings.",
+                Success = ReadingStatus.Failure
+            };
         }
     }
 }
