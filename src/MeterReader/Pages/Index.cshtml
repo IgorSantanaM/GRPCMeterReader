@@ -1,0 +1,10 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+@section Head {
+  <base href="./app/">  
+  <script type="module" crossorigin src="/app/index.js" asp-append-version="true"></script>
+}
+<div id="app"></div>
