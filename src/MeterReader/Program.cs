@@ -67,7 +67,7 @@ static void SetupMiddleware(WebApplication webApp)
   webApp.UseAuthorization();
 
   webApp.MapRazorPages();
-
+    webApp.MapGrpcService<MeterReader.Services.MeterReadingService>();
 }
 
 
@@ -101,5 +101,7 @@ static void RegisterServices(WebApplicationBuilder bldr)
   bldr.Services.AddScoped<IReadingRepository, ReadingRepository>();
 
   bldr.Services.AddRazorPages();
+
+    bldr.Services.AddGrpc(cfg => cfg.EnableDetailedErrors = true);    
 
 }
