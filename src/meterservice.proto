@@ -3,9 +3,16 @@ syntax = "proto3";
 option csharp_namespace = "MeterReader.gRPC";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 service MeterReaderService {
 	rpc AddReading (ReadingPacket) returns (StatusMessage);
+	rpc AddReadingStream (stream ReadingMessage) returns (stream ErrorMessage);
+}
+
+
+message ErrorMessage {
+	string Message = 1;
 }
 
 message ReadingPacket {
@@ -23,7 +30,7 @@ message ReadingMessage {
 }
 
 message StatusMessage {
-	ReadingStatus Success = 1;
+	ReadingStatus Status = 1;
 	string Message = 2;
 }
 

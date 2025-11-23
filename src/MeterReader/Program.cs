@@ -62,12 +62,16 @@ static void SetupMiddleware(WebApplication webApp)
   webApp.UseRouting();
 
   webApp.UseCors();
+    webApp.UseGrpcWeb();
+  webApp.MapGrpcService<MeterReader.Services.MeterReadingService>()
+        .EnableGrpcWeb()
+        .RequireCors("AllowAll");
 
   webApp.UseAuthentication();
   webApp.UseAuthorization();
 
   webApp.MapRazorPages();
-    webApp.MapGrpcService<MeterReader.Services.MeterReadingService>();
+    
 }
 
 
