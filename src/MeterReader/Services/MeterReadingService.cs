@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using MeterReader.gRPC;
 using static MeterReader.gRPC.MeterReaderService;
 
@@ -23,10 +24,11 @@ namespace MeterReader.Services
                 }
                 if (await repository.SaveAllAsync())
                 {
+                    logger.LogInformation("Successfully saved {count} readings.", request.Readings.Count);
                     return new StatusMessage
                     {
                         Message = "Readings successfully saved.",
-                        Success = ReadingStatus.Success
+                        Status = ReadingStatus.Success
                     };
                 }
             }
@@ -34,8 +36,36 @@ namespace MeterReader.Services
             return  new StatusMessage()
             {
                 Message = "Failed to save readings.",
-                Success = ReadingStatus.Failure
+                Status = ReadingStatus.Failure
             };
+        }
+
+        public override async Task AddReadingStream(
+            IAsyncStreamReader<ReadingMessage> requestStream,
+            IServerStreamWriter<ErrorMessage> responseStream,
+            ServerCallContext context)
+        {
+            while (await requestStream.MoveNext())
+            {
+                var msg = requestStream.Current;
+
+                if(msg.ReadingValue < 500)
+                {
+                    await responseStream.WriteAsync(new ErrorMessage
+                    {
+                        Message = $"Reading value {msg.ReadingValue} is below the minimum threshold."
+                    });
+                }
+                var readingValue = new MeterReading()
+                {
+                    CustomerId = msg.CustomerId,
+                    Value = msg.ReadingValue,
+                    ReadingDate = msg.ReadingTime.ToDateTime()
+                };
+                logger.LogInformation("Received reading for CustomerId: {customerId} with Value: {value}", msg.CustomerId, msg.ReadingValue);
+                repository.AddEntity(readingValue);
+                await repository.SaveAllAsync();
+            }
         }
     }
 }
