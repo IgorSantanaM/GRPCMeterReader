@@ -8,9 +8,21 @@ import "google/protobuf/empty.proto";
 service MeterReaderService {
 	rpc AddReading (ReadingPacket) returns (StatusMessage);
 	rpc AddReadingStream (stream ReadingMessage) returns (stream ErrorMessage);
+	rpc GenerateToken(TokenRequest) returns (TokenResponse);
 }
 
 
+
+message TokenRequest {
+	string Username = 1;
+	string Password = 2;
+}
+
+message TokenResponse{
+	bool Success = 1;
+	string Token = 2;
+	google.protobuf.Timestamp Expiration = 3;
+}
 message ErrorMessage {
 	string Message = 1;
 }

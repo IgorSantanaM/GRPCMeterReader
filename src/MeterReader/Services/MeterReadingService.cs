@@ -1,12 +1,44 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using Grpc.Core;
+﻿using Grpc.Core;
 using MeterReader.gRPC;
+using Microsoft.AspNetCore.Authentication.Certificate;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using static MeterReader.gRPC.MeterReaderService;
 
 namespace MeterReader.Services
 {
-    public class MeterReadingService(IReadingRepository repository, ILogger<MeterReadingService> logger) : MeterReaderServiceBase
+    [Authorize(AuthenticationSchemes = CertificateAuthenticationDefaults.AuthenticationScheme)]
+    public class MeterReadingService(IReadingRepository repository, ILogger<MeterReadingService> logger, JwtTokenValidationService tokenService) : MeterReaderServiceBase
     {
+        [AllowAnonymous]
+        public override async Task<TokenResponse> GenerateToken(TokenRequest request, ServerCallContext context)
+        {
+            var creds = new CredentialModel
+            {
+                UserName = request.Username,
+                Passcode = request.Password
+            };
+
+            var result = await tokenService.GenerateTokenModelAsync(creds);
+
+            if (result.Success)
+            {
+                return new TokenResponse
+                {
+                    Success = true,
+                    Token = result.Token!,
+                    Expiration = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(result.Expiration.ToUniversalTime())
+                };
+            }
+            else
+            {
+                return new TokenResponse
+                {
+                    Success = false
+                };
+            }
+        }
+
         public override async Task<StatusMessage> AddReading(ReadingPacket request, ServerCallContext context)
         {
             if (request.Succesful == ReadingStatus.Success)
@@ -33,7 +65,7 @@ namespace MeterReader.Services
                 }
             }
 
-            return  new StatusMessage()
+            return new StatusMessage()
             {
                 Message = "Failed to save readings.",
                 Status = ReadingStatus.Failure
@@ -49,7 +81,7 @@ namespace MeterReader.Services
             {
                 var msg = requestStream.Current;
 
-                if(msg.ReadingValue < 500)
+                if (msg.ReadingValue < 500)
                 {
                     await responseStream.WriteAsync(new ErrorMessage
                     {
